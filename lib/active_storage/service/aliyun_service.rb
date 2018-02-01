@@ -1,46 +1,27 @@
 # frozen_string_literal: true
-
-gem "aliyun-oss-sdk", "~> 0.1.6"
-
+require "aliyun/oss"
 module ActiveStorage
-  module Service::Aliyun < Service
-    VERSION     = '0.0.1'
-    PATH_PREFIX = %r{^/}
-
+  class Service::AliyunService < Service
     def initialize(**config)
       @config = config
     end
 
     def upload(key, io, checksum: nil)
-      key.sub!(PATH_PREFIX, '')
-
       headers = {}
-      headers['Content-Type'] = opts[:content_type] || 'application/octet-stream'
-      content_disposition = opts[:content_disposition]
-      if content_disposition
-        headers['Content-Disposition'] = content_disposition
-      end
-
       instrument :upload, key: key, checksum: checksum do
-        res = client.bucket_create_object(key, io, headers)
-        if !res.success?
-          raise ActiveStorage::IntegrityError
-        end
-        return res
+        bucket.put_object(path_for(key), file: io)
       end
     end
 
     def download(key)
-      key.sub!(PATH_PREFIX, '')
       instrument :download, key: key do
-        client.bucket_get_object(key)
+        bucket.get_object(path_for(key))
       end
     end
 
     def delete(key)
-      key.sub!(PATH_PREFIX, '')
       instrument :delete, key: key do
-        client.bucket_delete_object(key)
+        bucket.delete_object(path_for(key))
       end
     end
 
@@ -52,16 +33,17 @@ module ActiveStorage
 
     def exist?(key)
       instrument :exist, key: key do |payload|
-        res = client.bucket_get_meta_object(key)
-        res.success?
+        bucket.object_exists?(path_for(key))
       end
     end
 
     def url(key, expires_in:, filename:, content_type:, disposition:)
-      key.sub!(PATH_PREFIX, '')
       instrument :url, key: key do |payload|
-        generated_url = client.bucket_get_object_share_link(key, expires_in)
+        generated_url = bucket.object_url(path_for(key), config.fetch(:private, false), expires_in)
         generated_url.gsub('http://', 'https://')
+        if filename.present?
+          generated_url = [generated_url, filename].join("?")
+        end
 
         payload[:url] = generated_url
 
@@ -83,22 +65,29 @@ module ActiveStorage
     private
       attr_reader :config
 
-      def img_client
-        return @img_client if defined?(@img_client)
-        opts = {
-          host: "img-#{config.area}.aliyuncs.com",
-          bucket: config.bucket
-        }
-        @img_client = ::Aliyun::Oss::Client.new(onfig.access_key, config.access_key_serect, opts)
+      def path_for(key)
+        return key if !config.fetch(:path, nil)
+        File.join(config.fetch(:path), key)
+      end
+
+      def bucket
+        return @bucket if defined? @bucket
+        @bucket = client.get_bucket(config.fetch(:bucket))
+        @bucket
+      end
+
+      def endpoint
+        config.fetch(:endpoint, "https://oss-cn-hangzhou.aliyuncs.com")
       end
 
       def client
-        return @client if defined? @client
-        opts = {
-          host: "oss-#{config.area}.aliyuncs.com",
-          bucket: config.bucket
-        }
-        @client ||= ::Aliyun::Oss::Client.new(config.access_key, config.access_key_serect, opts)
+        @client ||= client = Aliyun::OSS::Client.new(
+          endpoint: endpoint,
+          access_key_id: config.fetch(:access_key_id),
+          access_key_secret: config.fetch(:access_key_secret),
+          cname: config.fetch(:cname, false)
+        )
       end
+
   end
 end

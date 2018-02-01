@@ -1,10 +1,20 @@
 test:
-  service: Disk
-  root: <%= Rails.root.join("tmp/storage") %>
+  service: Aliyun
+  access_key_id: <%= ENV["ALIYUN_ACCESS_KEY_ID"] %>
+  access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
+  bucket: <%= ENV["ALIYUN_BUCKET"] %>
+  region: "https://oss-cn-beijing.aliyuncs.com"
+  cname: false
+  path: activestorage_aliyun/test
 
 local:
-  service: Disk
-  root: <%= Rails.root.join("storage") %>
+  service: Aliyun
+  access_key_id: <%= ENV["ALIYUN_ACCESS_KEY_ID"] %>
+  access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
+  bucket: <%= ENV["ALIYUN_BUCKET"] %>
+  endpoint: "https://oss-cn-beijing.aliyuncs.com"
+  cname: false
+  path: activestorage_aliyun/local
 
 # Use rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:
