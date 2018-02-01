@@ -8,7 +8,7 @@ How to use my plugin.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'activestorage_aliyun'
+gem 'activestorage-aliyun'
 ```
 
 And then execute:
@@ -18,7 +18,7 @@ $ bundle
 
 Or install it yourself as:
 ```bash
-$ gem install activestorage_aliyun
+$ gem install activestorage-aliyun
 ```
 
 ## Contributing

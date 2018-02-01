@@ -4,8 +4,7 @@ test:
   access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
   bucket: <%= ENV["ALIYUN_BUCKET"] %>
   region: "https://oss-cn-beijing.aliyuncs.com"
-  cname: false
-  path: activestorage_aliyun/test
+  path: activestorage-aliyun
 
 local:
   service: Aliyun
@@ -13,8 +12,7 @@ local:
   access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
   bucket: <%= ENV["ALIYUN_BUCKET"] %>
   endpoint: "https://oss-cn-beijing.aliyuncs.com"
-  cname: false
-  path: activestorage_aliyun/local
+  path: activestorage-aliyun
 
 # Use rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
 # amazon:

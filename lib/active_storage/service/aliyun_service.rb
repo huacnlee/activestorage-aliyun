@@ -3,6 +3,7 @@ require "aliyun/oss"
 module ActiveStorage
   class Service::AliyunService < Service
     def initialize(**config)
+      Aliyun::Common::Logging.set_log_file("/dev/null")
       @config = config
     end
 
@@ -27,7 +28,7 @@ module ActiveStorage
 
     def delete_prefixed(prefix)
       instrument :delete_prefixed, prefix: prefix do
-        raise 'Not alllow delete files with prefix.'
+        bucket.delete_object(path_for(prefix))
       end
     end
 
@@ -39,7 +40,7 @@ module ActiveStorage
 
     def url(key, expires_in:, filename:, content_type:, disposition:)
       instrument :url, key: key do |payload|
-        generated_url = bucket.object_url(path_for(key), config.fetch(:private, false), expires_in)
+        generated_url = bucket.object_url(path_for(key), false, expires_in)
         generated_url.gsub('http://', 'https://')
         if filename.present?
           generated_url = [generated_url, filename].join("?")

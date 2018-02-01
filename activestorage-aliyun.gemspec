@@ -4,7 +4,7 @@ require File.expand_path('lib/active_storage_aliyun/version')
 
 # Describe your gem and declare its dependencies:
 Gem::Specification.new do |s|
-  s.name        = "activestorage_aliyun"
+  s.name        = "activestorage-aliyun"
   s.version     = ActiveStorageAliyun::VERSION
   s.date        = '2018-02-01'
   s.homepage    = 'https://github.com/huacnlee/activestorage-aliyun'
