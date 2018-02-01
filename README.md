@@ -1,6 +1,6 @@
 # ActiveStorage Aliyun Service
 
-Short description and motivation.
+Wraps the Aliyun OSS as an Active Storage service.
 
 ## Installation
 
