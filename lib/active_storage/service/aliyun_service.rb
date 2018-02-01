@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require "aliyun/oss"
+
 module ActiveStorage
   class Service::AliyunService < Service
     def initialize(**config)
@@ -8,15 +9,24 @@ module ActiveStorage
     end
 
     def upload(key, io, checksum: nil)
-      headers = {}
       instrument :upload, key: key, checksum: checksum do
-        bucket.put_object(path_for(key), file: io)
+        bucket.put_object(path_for(key)) do |stream|
+          stream << io.read
+        end
       end
     end
 
     def download(key)
       instrument :download, key: key do
-        bucket.get_object(path_for(key))
+        chunk_buff = []
+        bucket.get_object(path_for(key)) do |chunk|
+          if block_given?
+            yield chunk
+          else
+            chunk_buff << chunk
+          end
+        end
+        chunk_buff.join("")
       end
     end
 
@@ -28,7 +38,9 @@ module ActiveStorage
 
     def delete_prefixed(prefix)
       instrument :delete_prefixed, prefix: prefix do
-        bucket.delete_object(path_for(prefix))
+        files = bucket.list_objects(prefix: path_for(prefix))
+        keys = files.map(&:key)
+        bucket.batch_delete_objects(keys, quiet: true)
       end
     end
 
@@ -42,7 +54,7 @@ module ActiveStorage
       instrument :url, key: key do |payload|
         generated_url = bucket.object_url(path_for(key), false, expires_in)
         generated_url.gsub('http://', 'https://')
-        if filename.present?
+        if filename.present? && filename.include?("x-oss-process")
           generated_url = [generated_url, filename].join("?")
         end
 
@@ -82,7 +94,7 @@ module ActiveStorage
       end
 
       def client
-        @client ||= client = Aliyun::OSS::Client.new(
+        @client ||= Aliyun::OSS::Client.new(
           endpoint: endpoint,
           access_key_id: config.fetch(:access_key_id),
           access_key_secret: config.fetch(:access_key_secret),
