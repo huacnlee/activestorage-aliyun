@@ -2,6 +2,10 @@
 
 Wraps the Aliyun OSS as an Active Storage service.
 
+
+[![Gem Version](https://badge.fury.io/rb/activestorage-aliyun.svg)](https://badge.fury.io/rb/activestorage-aliyun) [![Build Status](https://travis-ci.org/huacnlee/activestorage-aliyun.svg)](https://travis-ci.org/huacnlee/activestorage-aliyun) [![Code Climate](https://codeclimate.com/github/huacnlee/activestorage-aliyun/badges/gpa.svg)](https://codeclimate.com/github/huacnlee/activestorage-aliyun) [![codecov.io](https://codecov.io/github/huacnlee/activestorage-aliyun/coverage.svg?branch=master)](https://codecov.io/github/huacnlee/activestorage-aliyun?branch=master)
+
+
 ## Installation
 
 Add this line to your application's Gemfile:
