@@ -34,8 +34,8 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url" do
-    assert_equal fixure_url_for("#{FIXTURE_KEY}"), @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
-    assert_equal fixure_url_for("#{FIXTURE_KEY}") + "?x-oss-process=image/resize,h_100,w_100", @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, filename: "x-oss-process=image/resize,h_100,w_100")
+    assert_equal fixure_url_for(FIXTURE_KEY), @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+    assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image/resize,h_100,w_100", @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, filename: "x-oss-process=image/resize,h_100,w_100")
   end
 
   test "uploading with integrity" do
@@ -94,6 +94,48 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       @service.delete("a/a/a")
       @service.delete("a/a/b")
       @service.delete("a/b/a")
+    end
+  end
+
+  test "headers_for_direct_upload" do
+    key          = "test-file"
+    data         = "Something else entirely!"
+    checksum     = Digest::MD5.base64digest(data)
+    content_type = "text/plain"
+    date         = "Fri, 02 Feb 2018 06:45:25 GMT"
+
+    travel_to Time.parse(date) do
+      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
+      assert_equal date, headers["x-oss-date"]
+      assert_equal "text/plain", headers["Content-Type"]
+      assert_equal checksum, headers["Content-MD5"]
+      assert headers["Authorization"].start_with?("OSS #{ENV["ALIYUN_ACCESS_KEY_ID"]}:")
+    end
+  end
+
+  test "direct upload" do
+    begin
+      key      = SecureRandom.base58(24)
+      data     = "Something else entirely!"
+      checksum = Digest::MD5.base64digest(data)
+      url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
+      assert_equal fixure_url_for(key), url
+
+      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
+
+      uri = URI.parse url
+      request = Net::HTTP::Put.new uri.request_uri
+      request.body = data
+      headers.each_key do |key|
+        request.add_field key, headers[key]
+      end
+      Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
+        http.request request
+      end
+
+      assert_equal data, @service.download(key)
+    ensure
+      @service.delete key
     end
   end
 end

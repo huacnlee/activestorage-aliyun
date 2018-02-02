@@ -54,7 +54,7 @@ module ActiveStorage
       instrument :url, key: key do |payload|
         generated_url = bucket.object_url(path_for(key), false, expires_in)
         generated_url.gsub('http://', 'https://')
-        if filename.present? && filename.include?("x-oss-process")
+        if filename.to_s.include?("x-oss-process")
           generated_url = [generated_url, filename].join("?")
         end
 
@@ -64,15 +64,31 @@ module ActiveStorage
       end
     end
 
+    # You must setup CORS on OSS control panel to allow JavaScript request from your site domain.
+    # https://www.alibabacloud.com/help/zh/doc-detail/31988.htm
+    # https://help.aliyun.com/document_detail/31925.html
+    # Source: *.your.host.com
+    # Allowed Methods: POST, PUT, HEAD
+    # Allowed Headers: *
     def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:)
       instrument :url, key: key do |payload|
-        # FIXME: to implement direct upload
-        raise 'Not implement'
+        generated_url = bucket.object_url(path_for(key), false)
+        payload[:url] = generated_url
+        generated_url
       end
     end
 
+    # Headers for Direct Upload
+    # https://help.aliyun.com/document_detail/31951.html
+    # headers["Date"] is required use x-oss-date instead
     def headers_for_direct_upload(key, content_type:, checksum:, **)
-      { "Content-Type" => content_type, "Content-MD5" => checksum }
+      date = Time.now.httpdate
+      {
+        "Content-Type" => content_type,
+        "Content-MD5" => checksum,
+        "Authorization" => authorization(key, content_type, checksum, date),
+        "x-oss-date" => date,
+      }
     end
 
     private
@@ -87,6 +103,14 @@ module ActiveStorage
         return @bucket if defined? @bucket
         @bucket = client.get_bucket(config.fetch(:bucket))
         @bucket
+      end
+
+      def authorization(key, content_type, checksum, date)
+        filename = File.expand_path("/#{bucket.name}/#{path_for(key)}")
+        addition_headers = "x-oss-date:"+date
+        sign = ["PUT", checksum, content_type, date, addition_headers, filename].join("\n")
+        signature = Base64.strict_encode64(OpenSSL::HMAC.digest('sha1', config.fetch(:access_key_secret), sign))
+        "OSS " + config.fetch(:access_key_id) + ":" + signature
       end
 
       def endpoint
