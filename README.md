@@ -35,11 +35,25 @@ production:
   path: "my-app-files"
 ```
 
-Use image:
+### Use for image url
 
 ```erb
-- Orignial File URL: <%= image_tag @photo.image.service_url %>
-- Thumb with OSS image service: <%= image_tag @photo.image.service_url(filename: 'x-oss-process=image/resize,h_100,w_100') %>
+Orignial File URL:
+
+<%= image_tag @photo.image.service_url %>
+
+Thumb with OSS image service:
+
+<%= image_tag @photo.image.service_url(filename: 'x-oss-process=image/resize,h_100,w_100') %>
+```
+
+### Use for file download
+
+If you want to get original filename (Include Chinese and other UTF-8 chars), for example: `演示文件 download.zip`, you need present `disposition: :attachment` option.
+
+```erb
+#
+<%= image_tag @photo.image.service_url(disposition: :attachment) %>
 ```
 
 ## Contributing

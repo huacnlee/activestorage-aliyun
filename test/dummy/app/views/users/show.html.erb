@@ -10,5 +10,14 @@
   <%= image_tag @user.avatar.service_url(filename: 'x-oss-process=image/resize,h_100,w_100') %>
 </p>
 
+<p>
+  <strong>Files:</strong>
+  <ul>
+    <% @user.files.each do |f| %>
+    <li><%= link_to f.filename, f.service_url(disposition: :attachment) %></li>
+    <% end %>
+  </ul>
+</p>
+
 <%= link_to 'Edit', edit_user_path(@user) %> |
 <%= link_to 'Back', users_path %>
