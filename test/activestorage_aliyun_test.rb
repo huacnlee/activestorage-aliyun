@@ -15,7 +15,19 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       access_key_secret: ENV["ALIYUN_ACCESS_KEY_SECRET"],
       bucket: ENV["ALIYUN_BUCKET"],
       endpoint: ENV["ALIYUN_ENDPOINT"],
-      path: "activestorage-aliyun-test"
+      path: "activestorage-aliyun-test",
+      mode: "public",
+    }
+  }
+  ALIYUN_PRIVATE_CONFIG = {
+    aliyun: {
+      service: "Aliyun",
+      access_key_id: ENV["ALIYUN_ACCESS_KEY_ID"],
+      access_key_secret: ENV["ALIYUN_ACCESS_KEY_SECRET"],
+      bucket: ENV["ALIYUN_BUCKET"],
+      endpoint: ENV["ALIYUN_ENDPOINT"],
+      path: "activestorage-aliyun-test",
+      mode: "private"
     }
   }
 
@@ -27,6 +39,8 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   setup do
     @service = ActiveStorage::Service.configure(:aliyun, ALIYUN_CONFIG)
+    @private_service = ActiveStorage::Service.configure(:aliyun, ALIYUN_PRIVATE_CONFIG)
+
     @service.upload FIXTURE_KEY, StringIO.new(FIXTURE_DATA)
   end
 
@@ -36,6 +50,22 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url" do
     assert_equal fixure_url_for(FIXTURE_KEY), @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+  end
+
+  test "get private mode url" do
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline, filename: "foo.jpg")
+    assert_equal true, url.include?("Signature=")
+    assert_equal true, url.include?("OSSAccessKeyId=")
+    res = open(url)
+    assert_equal ["200", "OK"], res.status
+    assert_equal FIXTURE_DATA, res.read
+
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline, filename: "x-oss-process=image/resize,h_100,w_100")
+    assert_equal true, url.include?("x-oss-process=")
+    assert_equal true, url.include?("Signature=")
+    assert_equal true, url.include?("OSSAccessKeyId=")
+    res = open(url)
+    assert_equal ["200", "OK"], res.status
   end
 
   test "get url with oss image thumb" do
@@ -52,8 +82,6 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     assert_equal ["200", "OK"], res.status
     assert_equal "image/jpeg", res.content_type
     assert_equal "attachment;filename*=UTF-8''#{CGI.escape(filename)}", res.meta["content-disposition"]
-
-    # assert_equal data, @service.download(FIXTURE_KEY)
   end
 
   test "uploading with integrity" do
@@ -69,6 +97,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "downloading" do
+    assert_equal FIXTURE_DATA, @private_service.download(FIXTURE_KEY)
     assert_equal FIXTURE_DATA, @service.download(FIXTURE_KEY)
   end
 
