@@ -39,7 +39,9 @@ module ActiveStorage
     def delete_prefixed(prefix)
       instrument :delete_prefixed, prefix: prefix do
         files = bucket.list_objects(prefix: path_for(prefix))
+        return if files.blank?
         keys = files.map(&:key)
+        return if keys.blank?
         bucket.batch_delete_objects(keys, quiet: true)
       end
     end
