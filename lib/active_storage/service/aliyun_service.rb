@@ -54,11 +54,10 @@ module ActiveStorage
 
     def url(key, expires_in:, filename:, content_type:, disposition:)
       instrument :url, key: key do |payload|
-        sign = disposition == :attachment
-
+        sign    = private_mode? || disposition == :attachment
         filekey = path_for(key)
+        params  = {}
 
-        params = {}
         if disposition == :attachment
           params["response-content-type"] = content_type if content_type
           params["response-content-disposition"] = "attachment;filename*=UTF-8''#{CGI.escape(filename.to_s)}"
@@ -138,6 +137,11 @@ module ActiveStorage
         return @bucket if defined? @bucket
         @bucket = client.get_bucket(config.fetch(:bucket))
         @bucket
+      end
+
+      # Bucket mode :public | :private
+      def private_mode?
+        @private_mode ||= config.fetch(:mode, "public").to_s == "private"
       end
 
       def authorization(key, content_type, checksum, date)

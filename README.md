@@ -33,6 +33,8 @@ production:
   endpoint: "https://oss-cn-beijing.aliyuncs.com"
   # path prefix, default: /
   path: "my-app-files"
+  # Bucket mode: [public, private], default: public
+  mode: "public"
 ```
 
 ### Use for image url
