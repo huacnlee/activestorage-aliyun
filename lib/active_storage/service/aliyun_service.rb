@@ -54,14 +54,22 @@ module ActiveStorage
 
     def url(key, expires_in:, filename:, content_type:, disposition:)
       instrument :url, key: key do |payload|
-        generated_url = bucket.object_url(path_for(key), false, expires_in)
-        generated_url.gsub('http://', 'https://')
-        if filename.to_s.include?("x-oss-process")
-          generated_url = [generated_url, filename].join("?")
+        sign = disposition == :attachment
+
+        filekey = path_for(key)
+
+        params = {}
+        if disposition == :attachment
+          params["response-content-type"] = content_type if content_type
+          params["response-content-disposition"] = "attachment;filename*=UTF-8''#{CGI.escape(filename.to_s)}"
+        else
+          if filename.to_s.include?("x-oss-process")
+            params["x-oss-process"] = filename.to_s.split("=").last
+          end
         end
 
+        generated_url = object_url(filekey, sign: sign, expires_in: expires_in, params: params)
         payload[:url] = generated_url
-
         generated_url
       end
     end
@@ -97,8 +105,33 @@ module ActiveStorage
       attr_reader :config
 
       def path_for(key)
-        return key if !config.fetch(:path, nil)
+        return key unless config.fetch(:path, nil)
         File.join(config.fetch(:path), key)
+      end
+
+      def object_url(key, sign:, expires_in: 60, params: {})
+        url = bucket.object_url(key, false)
+        unless sign
+          return url if params.blank?
+          return url + "?" + params.to_query
+        end
+
+        resource = "/#{bucket.name}/#{key}"
+        expires  = Time.now.to_i + expires_in
+        query    = {
+          "Expires" => expires,
+          "OSSAccessKeyId" => config.fetch(:access_key_id)
+        }
+        query.merge!(params)
+
+        if params.present?
+          resource += "?" + params.map { |k, v| "#{k}=#{v}" }.sort.join("&")
+        end
+
+        string_to_sign = ["GET", "", "", expires, resource].join("\n")
+        query["Signature"] = bucket.sign(string_to_sign)
+
+        [url, query.to_query].join('?')
       end
 
       def bucket
@@ -109,9 +142,9 @@ module ActiveStorage
 
       def authorization(key, content_type, checksum, date)
         filename = File.expand_path("/#{bucket.name}/#{path_for(key)}")
-        addition_headers = "x-oss-date:"+date
+        addition_headers = "x-oss-date:#{date}"
         sign = ["PUT", checksum, content_type, date, addition_headers, filename].join("\n")
-        signature = Base64.strict_encode64(OpenSSL::HMAC.digest('sha1', config.fetch(:access_key_secret), sign))
+        signature = bucket.sign(sign)
         "OSS " + config.fetch(:access_key_id) + ":" + signature
       end
 

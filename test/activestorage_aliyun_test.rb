@@ -3,6 +3,7 @@
 require "active_support/core_ext/securerandom"
 require "activestorage-aliyun"
 require "test_helper"
+require "open-uri"
 
 class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   FIXTURE_KEY   = SecureRandom.base58(24)
@@ -35,7 +36,24 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url" do
     assert_equal fixure_url_for(FIXTURE_KEY), @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
-    assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image/resize,h_100,w_100", @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, filename: "x-oss-process=image/resize,h_100,w_100")
+  end
+
+  test "get url with oss image thumb" do
+    suffix = "?x-oss-process=#{CGI.escape("image/resize,h_100,w_100")}"
+    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, filename: "x-oss-process=image/resize,h_100,w_100")
+    assert_equal fixure_url_for(FIXTURE_KEY) + suffix, url
+  end
+
+  test "get url with attachment type disposition" do
+    filename = "Test 中文 [100].zip"
+    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
+    res = open(url)
+
+    assert_equal ["200", "OK"], res.status
+    assert_equal "image/jpeg", res.content_type
+    assert_equal "attachment;filename*=UTF-8''#{CGI.escape(filename)}", res.meta["content-disposition"]
+
+    # assert_equal data, @service.download(FIXTURE_KEY)
   end
 
   test "uploading with integrity" do
