@@ -60,7 +60,11 @@ module ActiveStorage
 
         if disposition == :attachment
           params["response-content-type"] = content_type if content_type
-          params["response-content-disposition"] = "attachment;filename*=UTF-8''#{CGI.escape(filename.to_s)}"
+          unless filename.is_a?(ActiveStorage::Filename)
+            filename = ActiveStorage::Filename.new(filename)
+          end
+
+          params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
         else
           if filename.to_s.include?("x-oss-process")
             params["x-oss-process"] = filename.to_s.split("=").last

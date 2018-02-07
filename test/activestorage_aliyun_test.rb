@@ -74,14 +74,24 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     assert_equal fixure_url_for(FIXTURE_KEY) + suffix, url
   end
 
-  test "get url with attachment type disposition" do
+  test "get url with string :filename" do
     filename = "Test 中文 [100].zip"
     url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
     res = open(url)
 
     assert_equal ["200", "OK"], res.status
     assert_equal "image/jpeg", res.content_type
-    assert_equal "attachment;filename*=UTF-8''#{CGI.escape(filename)}", res.meta["content-disposition"]
+    assert_equal "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip", res.meta["content-disposition"]
+  end
+
+  test "get url with attachment type disposition" do
+    filename = ActiveStorage::Filename.new("Test 中文 [100].zip")
+    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
+    res = open(url)
+
+    assert_equal ["200", "OK"], res.status
+    assert_equal "image/jpeg", res.content_type
+    assert_equal "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip", res.meta["content-disposition"]
   end
 
   test "uploading with integrity" do
@@ -173,8 +183,8 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       uri = URI.parse url
       request = Net::HTTP::Put.new uri.request_uri
       request.body = data
-      headers.each_key do |key|
-        request.add_field key, headers[key]
+      headers.each_key do |field|
+        request.add_field field, headers[field]
       end
       Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
         http.request request
