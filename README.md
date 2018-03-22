@@ -43,10 +43,22 @@ production:
 Orignial File URL:
 
 <%= image_tag @photo.image.service_url %>
+```
 
 Thumb with OSS image service:
 
-<%= image_tag @photo.image.service_url(filename: 'x-oss-process=image/resize,h_100,w_100') %>
+```rb
+class Photo < ApplicationRecord
+  def image_thumb_url(process)
+    self.image.service_url(params: { 'x-oss-prcess' => process })
+  end
+end
+```
+
+And then:
+
+```erb
+<%= image_tag @photo.image.image_thumb_url("image/resize,h_100,w_100") %>
 ```
 
 ### Use for file download
