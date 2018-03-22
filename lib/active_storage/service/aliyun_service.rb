@@ -52,11 +52,10 @@ module ActiveStorage
       end
     end
 
-    def url(key, expires_in:, filename:, content_type:, disposition:)
+    def url(key, expires_in:, filename: nil, content_type:, disposition:, params: {})
       instrument :url, key: key do |payload|
         sign    = private_mode? || disposition == :attachment
         filekey = path_for(key)
-        params  = {}
 
         if disposition == :attachment
           params["response-content-type"] = content_type if content_type
@@ -65,10 +64,6 @@ module ActiveStorage
           end
 
           params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
-        else
-          if filename.to_s.include?("x-oss-process")
-            params["x-oss-process"] = filename.to_s.split("=").last
-          end
         end
 
         generated_url = object_url(filekey, sign: sign, expires_in: expires_in, params: params)
