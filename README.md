@@ -50,7 +50,7 @@ Thumb with OSS image service:
 ```rb
 class Photo < ApplicationRecord
   def image_thumb_url(process)
-    self.image.service_url(params: { 'x-oss-prcess' => process })
+    self.image.service_url(params: { "x-oss-process" => process })
   end
 end
 ```

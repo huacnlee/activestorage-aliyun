@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    activestorage-aliyun (0.3.0)
+    activestorage-aliyun (0.4.0)
       aliyun-sdk (>= 0.6.0)
-      rails (>= 5.2.0.rc)
+      rails (>= 5.2.0.rc2)
 
 GEM
   remote: https://rubygems.org/
@@ -132,7 +132,7 @@ GEM
       thread_safe (~> 0.1)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.7.4)
+    unf_ext (0.0.7.5)
     websocket-driver (0.7.0)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.3)
