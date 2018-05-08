@@ -1,3 +1,7 @@
+## 0.4.1
+
+- Remove config.path `/` prefix for fix #7 issue.
+
 ## 0.4.0
 
 - Support present `params` to `service_url` to oss image url.
