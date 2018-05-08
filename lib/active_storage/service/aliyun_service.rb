@@ -103,8 +103,11 @@ module ActiveStorage
       attr_reader :config
 
       def path_for(key)
-        return key unless config.fetch(:path, nil)
-        File.join(config.fetch(:path), key)
+        root_path = config.fetch(:path, nil)
+        return key unless root_path
+
+        root_path = root_path.sub(/^\//, "")
+        File.join(root_path, key)
       end
 
       def object_url(key, sign:, expires_in: 60, params: {})

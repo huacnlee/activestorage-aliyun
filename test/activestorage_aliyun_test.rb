@@ -26,7 +26,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       access_key_secret: ENV["ALIYUN_ACCESS_KEY_SECRET"],
       bucket: ENV["ALIYUN_BUCKET"],
       endpoint: ENV["ALIYUN_ENDPOINT"],
-      path: "activestorage-aliyun-test",
+      path: "/activestorage-aliyun-test",
       mode: "private"
     }
   }
@@ -46,6 +46,11 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   teardown do
     @service.delete FIXTURE_KEY
+  end
+
+  test "path_for remove / prefix" do
+    assert_equal "activestorage-aliyun-test/foo/bar", @service.send(:path_for, "foo/bar")
+    assert_equal "activestorage-aliyun-test/foo/bar", @private_service.send(:path_for, "foo/bar")
   end
 
   test "get url" do
