@@ -16,15 +16,28 @@ module ActiveStorage
       end
     end
 
-    def download(key)
-      instrument :download, key: key do
-        chunk_buff = []
-        bucket.get_object(path_for(key)) do |chunk|
-          if block_given?
-            yield chunk
-          else
+    def download(key, &block)
+      if block_given?
+        instrument :streaming_download, key: key do
+          bucket.get_object(path_for(key), &block)
+        end
+      else
+        instrument :download, key: key do
+          chunk_buff = []
+          bucket.get_object(path_for(key)) do |chunk|
             chunk_buff << chunk
           end
+          chunk_buff.join("")
+        end
+      end
+    end
+
+    def download_chunk(key, range)
+      instrument :download_chunk, key: key, range: range do
+        chunk_buff = []
+        range_end = range.exclude_end? ? range.end : range.end + 1
+        bucket.get_object(path_for(key), range: [range.begin, range_end]) do |chunk|
+          chunk_buff << chunk
         end
         chunk_buff.join("")
       end
