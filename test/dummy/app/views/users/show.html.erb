@@ -7,7 +7,7 @@
 
 <p>
   <strong>Avatar:</strong>
-  <%= image_tag @user.avatar.service_url(filename: 'x-oss-process=image/resize,h_100,w_100') %>
+  <%= image_tag @user.avatar.service_url(params: { "x-oss-process" => "image/resize,h_100,w_100" }), style: "width: 50px" %>
 </p>
 
 <p>
