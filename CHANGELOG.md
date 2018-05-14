@@ -1,3 +1,7 @@
+## 0.5.0
+
+-  Implement download_chunk method for fix #10 upload a large file by directly.
+
 ## 0.4.1
 
 - Remove config.path `/` prefix for fix #7 issue.
