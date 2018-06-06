@@ -32,8 +32,8 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   }
 
   def fixure_url_for(path)
-    filename = CGI.escape(["activestorage-aliyun-test", path].join("/"))
-    host = ENV["ALIYUN_ENDPOINT"].gsub("://", "://#{ENV["ALIYUN_BUCKET"]}.")
+    filename = File.join("activestorage-aliyun-test", path)
+    host = ENV["ALIYUN_ENDPOINT"].sub("://", "://#{ENV["ALIYUN_BUCKET"]}.")
     "#{host}/#{filename}"
   end
 
