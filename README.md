@@ -40,7 +40,7 @@ production:
 ### Use for image url
 
 ```erb
-Orignial File URL:
+Original File URL:
 
 <%= image_tag @photo.image.service_url %>
 ```
