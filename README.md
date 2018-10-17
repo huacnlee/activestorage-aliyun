@@ -24,7 +24,7 @@ $ bundle
 
 config/storage.yml
 
-```rb
+```yml
 production:
   service: Aliyun
   access_key_id: "your-oss-access-key-id"
@@ -35,6 +35,19 @@ production:
   path: "my-app-files"
   # Bucket mode: [public, private], default: public
   mode: "public"
+```
+
+### Custom Domain
+
+```yml
+production:
+  service: Aliyun
+  access_key_id: "your-oss-access-key-id"
+  access_key_secret: "your-oss-access-key-secret"
+  bucket: "bucket-name"
+  endpoint: "https://file.myhost.com"
+  # Enable cname to use custom domain
+  cname: true
 ```
 
 ### Use for image url
