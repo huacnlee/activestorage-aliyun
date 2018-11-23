@@ -1,6 +1,10 @@
+## 0.5.1
+
+- Set OSS Object `content-type` on uploading.
+
 ## 0.5.0
 
--  Implement download_chunk method for fix #10 upload a large file by directly.
+- Implement download_chunk method for fix #10 upload a large file by directly.
 
 ## 0.4.1
 
