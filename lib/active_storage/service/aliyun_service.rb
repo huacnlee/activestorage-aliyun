@@ -10,7 +10,8 @@ module ActiveStorage
 
     def upload(key, io, checksum: nil)
       instrument :upload, key: key, checksum: checksum do
-        bucket.put_object(path_for(key)) do |stream|
+        content_type = Marcel::MimeType.for(io)
+        bucket.put_object(path_for(key), content_type: content_type) do |stream|
           stream << io.read
         end
       end
