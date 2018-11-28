@@ -8,9 +8,9 @@ module ActiveStorage
       @config = config
     end
 
-    def upload(key, io, checksum: nil)
+    def upload(key, io, checksum: nil, content_type: nil, disposition: nil, filename: nil)
       instrument :upload, key: key, checksum: checksum do
-        content_type = Marcel::MimeType.for(io)
+        content_type ||= Marcel::MimeType.for(io)
         bucket.put_object(path_for(key), content_type: content_type) do |stream|
           stream << io.read
         end
@@ -118,10 +118,13 @@ module ActiveStorage
 
       def path_for(key)
         root_path = config.fetch(:path, nil)
-        return key unless root_path
+        if root_path.blank? || root_path == "/"
+          full_path = key
+        else
+          full_path = File.join(root_path, key)
+        end
 
-        root_path = root_path.sub(/^\//, "")
-        File.join(root_path, key)
+        full_path.gsub(/^\//, "").gsub(/[\/]+/, "/")
       end
 
       def object_url(key, sign:, expires_in: 60, params: {})
