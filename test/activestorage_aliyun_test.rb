@@ -13,10 +13,10 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       service: "Aliyun",
       access_key_id: ENV["ALIYUN_ACCESS_KEY_ID"],
       access_key_secret: ENV["ALIYUN_ACCESS_KEY_SECRET"],
-      bucket: ENV["ALIYUN_BUCKET"],
-      endpoint: ENV["ALIYUN_ENDPOINT"],
+      bucket: "carrierwave-aliyun-test",
+      endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "activestorage-aliyun-test",
-      mode: "public",
+      mode: "public"
     }
   }
   ALIYUN_PRIVATE_CONFIG = {
@@ -24,16 +24,16 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       service: "Aliyun",
       access_key_id: ENV["ALIYUN_ACCESS_KEY_ID"],
       access_key_secret: ENV["ALIYUN_ACCESS_KEY_SECRET"],
-      bucket: ENV["ALIYUN_BUCKET"],
-      endpoint: ENV["ALIYUN_ENDPOINT"],
+      bucket: "carrierwave-aliyun-test",
+      endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "/activestorage-aliyun-test",
-      mode: "private"
+      mode: "private",
     }
   }
 
   def fixure_url_for(path)
     filename = File.join("activestorage-aliyun-test", path)
-    host = ENV["ALIYUN_ENDPOINT"].sub("://", "://#{ENV["ALIYUN_BUCKET"]}.")
+    host = ALIYUN_CONFIG[:aliyun][:endpoint].sub("://", "://#{ALIYUN_CONFIG[:aliyun][:bucket]}.")
     "#{host}/#{filename}"
   end
 
@@ -48,9 +48,24 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     @service.delete FIXTURE_KEY
   end
 
-  test "path_for remove / prefix" do
-    assert_equal "activestorage-aliyun-test/foo/bar", @service.send(:path_for, "foo/bar")
-    assert_equal "activestorage-aliyun-test/foo/bar", @private_service.send(:path_for, "foo/bar")
+  def mock_service_with_path(path)
+    ActiveStorage::Service.configure(:aliyun, {
+      aliyun: { service: "Aliyun", path: path }
+    })
+  end
+
+  test "path_for" do
+    service = mock_service_with_path("/")
+    assert_equal "foo/bar", service.send(:path_for, "foo/bar")
+
+    service = mock_service_with_path("")
+    assert_equal "foo/bar", service.send(:path_for, "/foo/bar")
+
+    service = mock_service_with_path("/hello/world")
+    assert_equal "hello/world/foo/bar", service.send(:path_for, "/foo/bar")
+
+    service = mock_service_with_path("hello//world")
+    assert_equal "hello/world/foo/bar", service.send(:path_for, "foo/bar")
   end
 
   test "get url" do

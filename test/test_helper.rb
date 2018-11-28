@@ -3,6 +3,7 @@ ENV["RAILS_ENV"] = "test"
 
 require_relative "../test/dummy/config/environment"
 require "rails"
+require "minitest/autorun"
 require "rails/test_help"
 
 # Filter out Minitest backtrace while allowing backtrace from other libraries
