@@ -1,3 +1,8 @@
+## 0.6.0
+
+- Fix upload method option for Rails 5.2.1.1
+- Fix signature issue when config path is / #20
+
 ## 0.5.1
 
 - Set OSS Object `content-type` on uploading.
