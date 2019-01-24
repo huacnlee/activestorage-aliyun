@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    activestorage-aliyun (0.6.0)
+    activestorage-aliyun (0.6.1)
       aliyun-sdk (>= 0.6.0)
       rails (>= 5.2.0)
 
@@ -59,7 +59,7 @@ GEM
     domain_name (0.5.20180417)
       unf (>= 0.0.5, < 1.0.0)
     erubi (1.7.1)
-    globalid (0.4.1)
+    globalid (0.4.2)
       activesupport (>= 4.2.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
@@ -76,7 +76,7 @@ GEM
     mime-types (3.2.2)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2018.0812)
-    mimemagic (0.3.2)
+    mimemagic (0.3.3)
     mini_mime (1.0.1)
     mini_portile2 (2.3.0)
     minitest (5.11.3)
@@ -146,4 +146,4 @@ DEPENDENCIES
   sqlite3
 
 BUNDLED WITH
-   1.17.1
+   1.17.2

@@ -114,6 +114,12 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     assert_equal "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip", res.meta["content-disposition"]
   end
 
+  test "get url with empty content-type" do
+    filename = ActiveStorage::Filename.new("Test 中文 [100].zip")
+    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "", disposition: :attachment, filename: filename)
+    assert_no_match "response-content-type", url
+  end
+
   test "uploading with integrity" do
     begin
       key  = SecureRandom.base58(24)

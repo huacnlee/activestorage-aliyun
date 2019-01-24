@@ -1,3 +1,7 @@
+## 0.6.1
+
+- Fix signature issue when content-type is empty.
+
 ## 0.6.0
 
 - Fix upload method option for Rails 5.2.1.1

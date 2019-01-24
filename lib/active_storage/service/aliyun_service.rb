@@ -72,7 +72,7 @@ module ActiveStorage
         filekey = path_for(key)
 
         if disposition == :attachment
-          params["response-content-type"] = content_type if content_type
+          params["response-content-type"] = content_type unless content_type.blank?
           unless filename.is_a?(ActiveStorage::Filename)
             filename = ActiveStorage::Filename.new(filename)
           end
