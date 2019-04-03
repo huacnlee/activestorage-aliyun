@@ -1,3 +1,8 @@
+## 0.6.2
+
+- Fix service_url generate to includes the content-disposition and filename with the `disposition: :inline` mode.
+  This fix for PDF inline case, to keeps the origianal filename when user do save as.
+
 ## 0.6.1
 
 - Fix signature issue when content-type is empty.

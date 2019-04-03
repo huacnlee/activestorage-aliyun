@@ -31,10 +31,24 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     }
   }
 
+  def content_disposition_with(type, filename)
+    @service.send(:content_disposition_with, type: type, filename: ActiveStorage::Filename.wrap(filename))
+  end
+
   def fixure_url_for(path)
-    filename = File.join("activestorage-aliyun-test", path)
+    filename_key = File.join("activestorage-aliyun-test", path)
     host = ALIYUN_CONFIG[:aliyun][:endpoint].sub("://", "://#{ALIYUN_CONFIG[:aliyun][:bucket]}.")
-    "#{host}/#{filename}"
+
+    "#{host}/#{filename_key}"
+  end
+
+  def download_url_for(path, filename: nil, content_type: nil, disposition:, params: {})
+    host_url = fixure_url_for(path)
+
+    params["response-content-type"] = content_type if content_type
+    params["response-content-disposition"] = content_disposition_with(disposition, filename) if filename
+
+    "#{host_url}?#{params.to_query}"
   end
 
   setup do
@@ -69,13 +83,16 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url" do
-    assert_equal fixure_url_for(FIXTURE_KEY), @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+    assert_equal download_url_for(FIXTURE_KEY, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline),
+      @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
   end
 
   test "get private mode url" do
     url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline, filename: "foo.jpg")
     assert_equal true, url.include?("Signature=")
     assert_equal true, url.include?("OSSAccessKeyId=")
+    assert_equal true, url.include?("response-content-disposition=inline")
+    assert_equal true, url.include?("response-content-type=image%2Fpng")
     res = open(url)
     assert_equal ["200", "OK"], res.status
     assert_equal FIXTURE_DATA, res.read
@@ -84,14 +101,15 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     assert_equal true, url.include?("x-oss-process=")
     assert_equal true, url.include?("Signature=")
     assert_equal true, url.include?("OSSAccessKeyId=")
+    assert_equal true, url.include?("response-content-type=image%2Fpng")
+    assert_equal false, url.include?("response-content-disposition=")
     res = open(url)
     assert_equal ["200", "OK"], res.status
   end
 
   test "get url with oss image thumb" do
-    suffix = "?x-oss-process=#{CGI.escape("image/resize,h_100,w_100")}"
     url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" })
-    assert_equal fixure_url_for(FIXTURE_KEY) + suffix, url
+    assert_equal download_url_for(FIXTURE_KEY, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" }), url
   end
 
   test "get url with string :filename" do

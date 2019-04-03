@@ -6,12 +6,8 @@ require "rails"
 require "minitest/autorun"
 require "rails/test_help"
 
-# Filter out Minitest backtrace while allowing backtrace from other libraries
-# to be shown.
-Minitest.backtrace_filter = Minitest::BacktraceFilter.new
-
-require "rails/test_unit/reporter"
-Rails::TestUnitReporter.executable = "bin/test"
+ENV["BACKTRACE"] = "1"
+ENV["RUBYOPT"] = "-W0"
 
 # Load fixtures from the engine
 if ActiveSupport::TestCase.respond_to?(:fixture_path=)
