@@ -8,11 +8,13 @@ module ActiveStorage
       @config = config
     end
 
+    CHUNK_SIZE = 1024 * 1024
+
     def upload(key, io, checksum: nil, content_type: nil, disposition: nil, filename: nil)
       instrument :upload, key: key, checksum: checksum do
         content_type ||= Marcel::MimeType.for(io)
         bucket.put_object(path_for(key), content_type: content_type) do |stream|
-          stream << io.read
+          stream << io.read(CHUNK_SIZE) until io.eof?
         end
       end
     end
