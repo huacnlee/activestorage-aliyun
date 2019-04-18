@@ -1,3 +1,7 @@
+## 0.6.3
+
+- Enable chunk (2m each) upload, for imporve the big files upload performance. #35
+
 ## 0.6.2
 
 - Fix service_url generate to includes the content-disposition and filename with the `disposition: :inline` mode.

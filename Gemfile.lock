@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    activestorage-aliyun (0.6.2)
+    activestorage-aliyun (0.6.3)
       aliyun-sdk (>= 0.6.0)
       rails (>= 5.2.0)
 
