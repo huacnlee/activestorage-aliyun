@@ -73,11 +73,13 @@ module ActiveStorage
         sign    = private_mode? || disposition == :attachment
         filekey = path_for(key)
 
-        params["response-content-type"] = content_type unless content_type.blank?
+        if sign
+          params["response-content-type"] = content_type unless content_type.blank?
 
-        if filename
-          filename = ActiveStorage::Filename.wrap(filename)
-          params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
+          if filename
+            filename = ActiveStorage::Filename.wrap(filename)
+            params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
+          end
         end
 
         generated_url = object_url(filekey, sign: sign, expires_in: expires_in, params: params)

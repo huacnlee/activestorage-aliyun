@@ -82,9 +82,29 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     assert_equal "hello/world/foo/bar", service.send(:path_for, "foo/bar")
   end
 
-  test "get url" do
-    assert_equal download_url_for(FIXTURE_KEY, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline),
-      @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+  test "get url for public mode" do
+    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+    assert_equal fixure_url_for(FIXTURE_KEY), url
+
+    res = open(url)
+    assert_equal ["200", "OK"], res.status
+
+    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline, params: {
+      "x-oss-process": "image/resize,h_100,w_100"
+    })
+    assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
+
+    res = open(url)
+    assert_equal ["200", "OK"], res.status
+
+    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :attachment)
+    assert_equal true, url.include?("Signature=")
+    assert_equal true, url.include?("OSSAccessKeyId=")
+    assert_equal true, url.include?("response-content-type=image%2Fjpeg")
+    assert_equal true, url.include?("response-content-disposition=attachment")
+
+    res = open(url)
+    assert_equal ["200", "OK"], res.status
   end
 
   test "get private mode url" do
@@ -109,7 +129,10 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url with oss image thumb" do
     url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" })
-    assert_equal download_url_for(FIXTURE_KEY, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" }), url
+    assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
+    res = open(url)
+
+    assert_equal ["200", "OK"], res.status
   end
 
   test "get url with string :filename" do
