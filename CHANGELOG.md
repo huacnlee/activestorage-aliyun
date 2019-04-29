@@ -1,3 +1,7 @@
+## 0.6.4
+
+- Fix public url generate issue. #37
+
 ## 0.6.3
 
 - Enable chunk (2m each) upload, for imporve the big files upload performance. #35
