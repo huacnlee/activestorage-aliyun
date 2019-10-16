@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "aliyun/oss"
 
 module ActiveStorage
@@ -6,6 +7,14 @@ module ActiveStorage
     def initialize(**config)
       Aliyun::Common::Logging.set_log_file("/dev/null")
       @config = config
+
+      @public = @config.fetch(:public, false)
+
+      # Compatible with mode config
+      if @config.fetch(:mode, nil) == "public"
+        ActiveSupport::Deprecation.warn("mode has deprecated, and will remove in 1.1.0, use public: true instead.")
+        @public = true
+      end
     end
 
     CHUNK_SIZE = 1024 * 1024
@@ -68,26 +77,6 @@ module ActiveStorage
       end
     end
 
-    def url(key, expires_in:, filename: nil, content_type:, disposition:, params: {})
-      instrument :url, key: key do |payload|
-        sign    = private_mode? || disposition == :attachment
-        filekey = path_for(key)
-
-        if sign
-          params["response-content-type"] = content_type unless content_type.blank?
-
-          if filename
-            filename = ActiveStorage::Filename.wrap(filename)
-            params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
-          end
-        end
-
-        generated_url = object_url(filekey, sign: sign, expires_in: expires_in, params: params)
-        payload[:url] = generated_url
-        generated_url
-      end
-    end
-
     # You must setup CORS on OSS control panel to allow JavaScript request from your site domain.
     # https://www.alibabacloud.com/help/zh/doc-detail/31988.htm
     # https://help.aliyun.com/document_detail/31925.html
@@ -115,8 +104,46 @@ module ActiveStorage
       }
     end
 
+    # Remove this in Rails 6.1, compatiable with Rails 6.0.0
+    def url(key, **options)
+      instrument :url, key: key do |payload|
+        generated_url =
+          if public?
+            public_url(key, **options)
+          else
+            private_url(key, **options)
+          end
+
+        payload[:url] = generated_url
+
+        generated_url
+      end
+    end
+
     private
       attr_reader :config
+
+      def private_url(key, expires_in: 60, filename: nil, content_type: nil, disposition: nil, params: {}, **)
+        filekey = path_for(key)
+
+        params["response-content-type"] = content_type unless content_type.blank?
+
+        if filename
+          filename = ActiveStorage::Filename.wrap(filename)
+          params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
+        end
+
+        object_url(filekey, sign: true, expires_in: expires_in, params: params)
+      end
+
+      def public_url(key, params: {}, **)
+        object_url(path_for(key), sign: false, params: params)
+      end
+
+      # Remove this in Rails 6.1, compatiable with Rails 6.0.0
+      def public?
+        @public == true
+      end
 
       def path_for(key)
         root_path = config.fetch(:path, nil)
@@ -129,7 +156,7 @@ module ActiveStorage
         full_path.gsub(/^\//, "").gsub(/[\/]+/, "/")
       end
 
-      def object_url(key, sign:, expires_in: 60, params: {})
+      def object_url(key, sign: false, expires_in: 60, params: {})
         url = bucket.object_url(key, false)
         unless sign
           return url if params.blank?
@@ -151,18 +178,13 @@ module ActiveStorage
         string_to_sign = ["GET", "", "", expires, resource].join("\n")
         query["Signature"] = bucket.sign(string_to_sign)
 
-        [url, query.to_query].join('?')
+        [url, query.to_query].join("?")
       end
 
       def bucket
         return @bucket if defined? @bucket
         @bucket = client.get_bucket(config.fetch(:bucket))
         @bucket
-      end
-
-      # Bucket mode :public | :private
-      def private_mode?
-        @private_mode ||= config.fetch(:mode, "public").to_s == "private"
       end
 
       def authorization(key, content_type, checksum, date)
@@ -185,6 +207,5 @@ module ActiveStorage
           cname: config.fetch(:cname, false)
         )
       end
-
   end
 end

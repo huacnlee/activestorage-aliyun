@@ -6,7 +6,7 @@ require "test_helper"
 require "open-uri"
 
 class ActiveStorageAliyun::Test < ActiveSupport::TestCase
-  FIXTURE_KEY   = SecureRandom.base58(24)
+  FIXTURE_KEY = SecureRandom.base58(24)
   FIXTURE_DATA  = "\211PNG\r\n\032\n\000\000\000\rIHDR\000\000\000\020\000\000\000\020\001\003\000\000\000%=m\"\000\000\000\006PLTE\000\000\000\377\377\377\245\331\237\335\000\000\0003IDATx\234c\370\377\237\341\377_\206\377\237\031\016\2603\334?\314p\1772\303\315\315\f7\215\031\356\024\203\320\275\317\f\367\201R\314\f\017\300\350\377\177\000Q\206\027(\316]\233P\000\000\000\000IEND\256B`\202".dup.force_encoding(Encoding::BINARY)
   ALIYUN_CONFIG = {
     aliyun: {
@@ -16,7 +16,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       bucket: "carrierwave-aliyun-test",
       endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "activestorage-aliyun-test",
-      mode: "public"
+      public: true
     }
   }
   ALIYUN_PRIVATE_CONFIG = {
@@ -27,7 +27,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       bucket: "carrierwave-aliyun-test",
       endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "/activestorage-aliyun-test",
-      mode: "private",
+      public: false
     }
   }
 
@@ -55,7 +55,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     @service = ActiveStorage::Service.configure(:aliyun, ALIYUN_CONFIG)
     @private_service = ActiveStorage::Service.configure(:aliyun, ALIYUN_PRIVATE_CONFIG)
 
-    @service.upload FIXTURE_KEY, StringIO.new(FIXTURE_DATA)
+    @service.upload(FIXTURE_KEY, StringIO.new(FIXTURE_DATA))
   end
 
   teardown do
@@ -63,9 +63,9 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   def mock_service_with_path(path)
-    ActiveStorage::Service.configure(:aliyun, {
+    ActiveStorage::Service.configure(:aliyun,
       aliyun: { service: "Aliyun", path: path }
-    })
+    )
   end
 
   test "path_for" do
@@ -83,25 +83,16 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url for public mode" do
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+    url = @service.url(FIXTURE_KEY)
     assert_equal fixure_url_for(FIXTURE_KEY), url
 
     res = open(url)
     assert_equal ["200", "OK"], res.status
 
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline, params: {
+    url = @service.url(FIXTURE_KEY, params: {
       "x-oss-process": "image/resize,h_100,w_100"
     })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
-
-    res = open(url)
-    assert_equal ["200", "OK"], res.status
-
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :attachment)
-    assert_equal true, url.include?("Signature=")
-    assert_equal true, url.include?("OSSAccessKeyId=")
-    assert_equal true, url.include?("response-content-type=image%2Fjpeg")
-    assert_equal true, url.include?("response-content-disposition=attachment")
 
     res = open(url)
     assert_equal ["200", "OK"], res.status
@@ -128,7 +119,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url with oss image thumb" do
-    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" })
+    url = @service.url(FIXTURE_KEY, params: { "x-oss-process" => "image/resize,h_100,w_100" })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
     res = open(url)
 
@@ -137,7 +128,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url with string :filename" do
     filename = "Test 中文 [100].zip"
-    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
+    url = @private_service.url(FIXTURE_KEY, content_type: "image/jpeg", disposition: :attachment, filename: filename)
     res = open(url)
 
     assert_equal ["200", "OK"], res.status
@@ -147,7 +138,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url with attachment type disposition" do
     filename = ActiveStorage::Filename.new("Test 中文 [100].zip")
-    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
     res = open(url)
 
     assert_equal ["200", "OK"], res.status
@@ -220,19 +211,20 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "deleting by prefix" do
+    prefix = SecureRandom.hex
     begin
-      @service.upload("a/a/a", StringIO.new(FIXTURE_DATA))
-      @service.upload("a/a/b", StringIO.new(FIXTURE_DATA))
-      @service.upload("a/b/a", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/a/a", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/a/b", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/b/a", StringIO.new(FIXTURE_DATA))
 
-      @service.delete_prefixed("a/a/")
-      assert_not @service.exist?("a/a/a")
-      assert_not @service.exist?("a/a/b")
-      assert @service.exist?("a/b/a")
+      @service.delete_prefixed("#{prefix}/a/")
+      assert_not @service.exist?("#{prefix}/a/a")
+      assert_not @service.exist?("#{prefix}/a/b")
+      assert @service.exist?("#{prefix}/b/a")
     ensure
-      @service.delete("a/a/a")
-      @service.delete("a/a/b")
-      @service.delete("a/b/a")
+      @service.delete("#{prefix}/a/a")
+      @service.delete("#{prefix}/a/b")
+      @service.delete("#{prefix}/b/a")
     end
   end
 
@@ -244,7 +236,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     date         = "Fri, 02 Feb 2018 06:45:25 GMT"
 
     travel_to Time.parse(date) do
-      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
       assert_equal date, headers["x-oss-date"]
       assert_equal "text/plain", headers["Content-Type"]
       assert_equal checksum, headers["Content-MD5"]
@@ -260,7 +252,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
       assert_equal fixure_url_for(key), url
 
-      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
 
       uri = URI.parse url
       request = Net::HTTP::Put.new uri.request_uri
