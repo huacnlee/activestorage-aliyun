@@ -25,7 +25,7 @@ $ bundle
 config/storage.yml
 
 ```yml
-production:
+aliyun:
   service: Aliyun
   access_key_id: "your-oss-access-key-id"
   access_key_secret: "your-oss-access-key-secret"
@@ -33,19 +33,20 @@ production:
   endpoint: "https://oss-cn-beijing.aliyuncs.com"
   # path prefix, default: /
   path: "my-app-files"
-  # Bucket mode: [public, private], default: public
-  mode: "public"
+  # Bucket public: true/false, default: true, for generate public/private URL.
+  public: true
 ```
 
 ### Custom Domain
 
 ```yml
-production:
+aliyun:
   service: Aliyun
   access_key_id: "your-oss-access-key-id"
   access_key_secret: "your-oss-access-key-secret"
   bucket: "bucket-name"
   endpoint: "https://file.myhost.com"
+  public: false
   # Enable cname to use custom domain
   cname: true
 ```

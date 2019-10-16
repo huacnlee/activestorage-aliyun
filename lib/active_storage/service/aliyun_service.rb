@@ -123,7 +123,7 @@ module ActiveStorage
     private
       attr_reader :config
 
-      def private_url(key, expires_in:, filename: nil, content_type: nil, disposition: nil, params: {}, **)
+      def private_url(key, expires_in: 60, filename: nil, content_type: nil, disposition: nil, params: {}, **)
         filekey = path_for(key)
 
         params["response-content-type"] = content_type unless content_type.blank?
@@ -136,17 +136,8 @@ module ActiveStorage
         object_url(filekey, sign: true, expires_in: expires_in, params: params)
       end
 
-      def public_url(key, filename: nil, content_type: nil, disposition: nil, params: {}, **)
-        filekey = path_for(key)
-
-        params["response-content-type"] = content_type unless content_type.blank?
-
-        if filename
-          filename = ActiveStorage::Filename.wrap(filename)
-          params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
-        end
-
-        object_url(filekey, sign: false, params: params)
+      def public_url(key, params: {}, **)
+        object_url(path_for(key), sign: false, params: params)
       end
 
       # Remove this in Rails 6.1, compatiable with Rails 6.0.0

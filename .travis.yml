@@ -4,7 +4,7 @@ rvm:
   - 2.6.0
 
 gemfile:
-  - gemfiles/Gemfile-6-0
+  - gemfiles/Gemfile-6.0
   - gemfiles/Gemfile-master
 
 before_script:

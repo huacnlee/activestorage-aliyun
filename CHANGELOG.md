@@ -1,3 +1,8 @@
+## 1.0.0
+
+- Update for support Rals 6.1 permanent URL, and compatiable with Rails 6.0.
+- `mode` config has deprecated, use `public: true` instead.
+
 ## 0.6.4
 
 - Fix public url generate issue. #37
