@@ -211,19 +211,20 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "deleting by prefix" do
+    prefix = SecureRandom.hex
     begin
-      @service.upload("a/a/a", StringIO.new(FIXTURE_DATA))
-      @service.upload("a/a/b", StringIO.new(FIXTURE_DATA))
-      @service.upload("a/b/a", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/a/a", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/a/b", StringIO.new(FIXTURE_DATA))
+      @service.upload("#{prefix}/b/a", StringIO.new(FIXTURE_DATA))
 
-      @service.delete_prefixed("a/a/")
-      assert_not @service.exist?("a/a/a")
-      assert_not @service.exist?("a/a/b")
-      assert @service.exist?("a/b/a")
+      @service.delete_prefixed("#{prefix}/a/")
+      assert_not @service.exist?("#{prefix}/a/a")
+      assert_not @service.exist?("#{prefix}/a/b")
+      assert @service.exist?("#{prefix}/b/a")
     ensure
-      @service.delete("a/a/a")
-      @service.delete("a/a/b")
-      @service.delete("a/b/a")
+      @service.delete("#{prefix}/a/a")
+      @service.delete("#{prefix}/a/b")
+      @service.delete("#{prefix}/b/a")
     end
   end
 
