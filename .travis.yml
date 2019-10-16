@@ -1,7 +1,11 @@
 language: ruby
 
 rvm:
-  - 2.4.0
+  - 2.6.0
+
+gemfile:
+  - gemfiles/Gemfile-6-0
+  - gemfiles/Gemfile-master
 
 before_script:
   - bundle install

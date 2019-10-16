@@ -16,7 +16,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       bucket: "carrierwave-aliyun-test",
       endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "activestorage-aliyun-test",
-      mode: "public"
+      public: true
     }
   }
   ALIYUN_PRIVATE_CONFIG = {
@@ -27,7 +27,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       bucket: "carrierwave-aliyun-test",
       endpoint: "https://oss-cn-beijing.aliyuncs.com",
       path: "/activestorage-aliyun-test",
-      mode: "private",
+      public: false
     }
   }
 
@@ -63,9 +63,9 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   def mock_service_with_path(path)
-    ActiveStorage::Service.configure(:aliyun, {
+    ActiveStorage::Service.configure(:aliyun,
       aliyun: { service: "Aliyun", path: path }
-    })
+    )
   end
 
   test "path_for" do
@@ -83,13 +83,13 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url for public mode" do
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline)
+    url = @service.url(FIXTURE_KEY)
     assert_equal fixure_url_for(FIXTURE_KEY), url
 
     res = open(url)
     assert_equal ["200", "OK"], res.status
 
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :inline, params: {
+    url = @service.url(FIXTURE_KEY, params: {
       "x-oss-process": "image/resize,h_100,w_100"
     })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
@@ -97,9 +97,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     res = open(url)
     assert_equal ["200", "OK"], res.status
 
-    url = @service.url(FIXTURE_KEY, expires_in: 500, filename: "foo.jpg", content_type: "image/jpeg", disposition: :attachment)
-    assert_equal true, url.include?("Signature=")
-    assert_equal true, url.include?("OSSAccessKeyId=")
+    url = @service.url(FIXTURE_KEY, filename: "foo.jpg", content_type: "image/jpeg", disposition: :attachment)
     assert_equal true, url.include?("response-content-type=image%2Fjpeg")
     assert_equal true, url.include?("response-content-disposition=attachment")
 
@@ -128,7 +126,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "get url with oss image thumb" do
-    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" })
+    url = @service.url(FIXTURE_KEY, params: { "x-oss-process" => "image/resize,h_100,w_100" })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
     res = open(url)
 
@@ -137,7 +135,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
 
   test "get url with string :filename" do
     filename = "Test 中文 [100].zip"
-    url = @service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
+    url = @service.url(FIXTURE_KEY, content_type: "image/jpeg", disposition: :attachment, filename: filename)
     res = open(url)
 
     assert_equal ["200", "OK"], res.status
@@ -244,7 +242,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     date         = "Fri, 02 Feb 2018 06:45:25 GMT"
 
     travel_to Time.parse(date) do
-      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
       assert_equal date, headers["x-oss-date"]
       assert_equal "text/plain", headers["Content-Type"]
       assert_equal checksum, headers["Content-MD5"]
@@ -260,7 +258,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
       assert_equal fixure_url_for(key), url
 
-      headers  = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
 
       uri = URI.parse url
       request = Net::HTTP::Put.new uri.request_uri
