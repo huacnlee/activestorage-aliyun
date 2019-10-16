@@ -11,7 +11,7 @@ Wraps the Aliyun OSS as an Active Storage service, use [Aliyun official Ruby SDK
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'activestorage-aliyun'
+gem "activestorage-aliyun"
 ```
 
 And then execute:
@@ -21,6 +21,9 @@ $ bundle
 ```
 
 ## Usage
+
+> NOTE! Current document work for Rails 6.1, if you are using Rails 6.0, please visit: https://github.com/huacnlee/activestorage-aliyun/tree/v0.6.4
+> You can also to use activestorage-aliyun 1.0.0 in Rails 6.0
 
 config/storage.yml
 
@@ -56,7 +59,7 @@ aliyun:
 ```erb
 Original File URL:
 
-<%= image_tag @photo.image.service_url %>
+<%= image_tag @photo.image.url %>
 ```
 
 Thumb with OSS image service:
@@ -64,7 +67,7 @@ Thumb with OSS image service:
 ```rb
 class Photo < ApplicationRecord
   def image_thumb_url(process)
-    self.image.service_url(params: { "x-oss-process" => process })
+    self.image.url(params: { "x-oss-process" => process })
   end
 end
 ```
@@ -81,7 +84,7 @@ If you want to get original filename (Include Chinese and other UTF-8 chars), fo
 
 ```erb
 #
-<%= image_tag @photo.image.service_url(disposition: :attachment) %>
+<%= image_tag @photo.image.url(disposition: :attachment) %>
 ```
 
 ## Contributing
