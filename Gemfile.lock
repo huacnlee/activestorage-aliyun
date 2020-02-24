@@ -96,7 +96,7 @@ GEM
     minitest (5.13.0)
     netrc (0.11.0)
     nio4r (2.5.2)
-    nokogiri (1.10.5)
+    nokogiri (1.10.8)
       mini_portile2 (~> 2.4.0)
     rack (2.0.7)
     rack-test (1.1.0)
