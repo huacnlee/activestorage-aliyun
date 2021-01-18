@@ -39,7 +39,7 @@ module ActiveStorage
           bucket.get_object(path_for(key)) do |chunk|
             chunk_buff << chunk
           end
-          chunk_buff.join("")
+          chunk_buff.join
         end
       end
     end
@@ -51,7 +51,7 @@ module ActiveStorage
         bucket.get_object(path_for(key), range: [range.begin, range_end]) do |chunk|
           chunk_buff << chunk
         end
-        chunk_buff.join("")
+        chunk_buff.join
       end
     end
 
@@ -65,14 +65,16 @@ module ActiveStorage
       instrument :delete_prefixed, prefix: prefix do
         files = bucket.list_objects(prefix: path_for(prefix))
         return if files.blank?
+
         keys = files.map(&:key)
         return if keys.blank?
+
         bucket.batch_delete_objects(keys, quiet: true)
       end
     end
 
     def exist?(key)
-      instrument :exist, key: key do |payload|
+      instrument :exist, key: key do |_payload|
         bucket.object_exists?(path_for(key))
       end
     end
@@ -100,7 +102,7 @@ module ActiveStorage
         "Content-Type" => content_type,
         "Content-MD5" => checksum,
         "Authorization" => authorization(key, content_type, checksum, date),
-        "x-oss-date" => date,
+        "x-oss-date" => date
       }
     end
 
@@ -121,91 +123,92 @@ module ActiveStorage
     end
 
     private
-      attr_reader :config
 
-      def private_url(key, expires_in: 60, filename: nil, content_type: nil, disposition: nil, params: {}, **)
-        filekey = path_for(key)
+    attr_reader :config
 
-        params["response-content-type"] = content_type unless content_type.blank?
+    def private_url(key, expires_in: 60, filename: nil, content_type: nil, disposition: nil, params: {}, **)
+      filekey = path_for(key)
 
-        if filename
-          filename = ActiveStorage::Filename.wrap(filename)
-          params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
-        end
+      params["response-content-type"] = content_type unless content_type.blank?
 
-        object_url(filekey, sign: true, expires_in: expires_in, params: params)
+      if filename
+        filename = ActiveStorage::Filename.wrap(filename)
+        params["response-content-disposition"] = content_disposition_with(type: disposition, filename: filename)
       end
 
-      def public_url(key, params: {}, **)
-        object_url(path_for(key), sign: false, params: params)
+      object_url(filekey, sign: true, expires_in: expires_in, params: params)
+    end
+
+    def public_url(key, params: {}, **)
+      object_url(path_for(key), sign: false, params: params)
+    end
+
+    # Remove this in Rails 6.1, compatiable with Rails 6.0.0
+    def public?
+      @public == true
+    end
+
+    def path_for(key)
+      root_path = config.fetch(:path, nil)
+      full_path = if root_path.blank? || root_path == "/"
+                    key
+                  else
+                    File.join(root_path, key)
+                  end
+
+      full_path.gsub(%r{^/}, "").gsub(%r{/+}, "/")
+    end
+
+    def object_url(key, sign: false, expires_in: 60, params: {})
+      url = bucket.object_url(key, false)
+      unless sign
+        return url if params.blank?
+
+        return "#{url}?#{params.to_query}"
       end
 
-      # Remove this in Rails 6.1, compatiable with Rails 6.0.0
-      def public?
-        @public == true
-      end
+      resource = "/#{bucket.name}/#{key}"
+      expires  = Time.now.to_i + expires_in
+      query    = {
+        "Expires" => expires,
+        "OSSAccessKeyId" => config.fetch(:access_key_id)
+      }
+      query.merge!(params)
 
-      def path_for(key)
-        root_path = config.fetch(:path, nil)
-        if root_path.blank? || root_path == "/"
-          full_path = key
-        else
-          full_path = File.join(root_path, key)
-        end
+      resource += "?" + params.map { |k, v| "#{k}=#{v}" }.sort.join("&") if params.present?
 
-        full_path.gsub(/^\//, "").gsub(/[\/]+/, "/")
-      end
+      string_to_sign = ["GET", "", "", expires, resource].join("\n")
+      query["Signature"] = bucket.sign(string_to_sign)
 
-      def object_url(key, sign: false, expires_in: 60, params: {})
-        url = bucket.object_url(key, false)
-        unless sign
-          return url if params.blank?
-          return url + "?" + params.to_query
-        end
+      [url, query.to_query].join("?")
+    end
 
-        resource = "/#{bucket.name}/#{key}"
-        expires  = Time.now.to_i + expires_in
-        query    = {
-          "Expires" => expires,
-          "OSSAccessKeyId" => config.fetch(:access_key_id)
-        }
-        query.merge!(params)
+    def bucket
+      return @bucket if defined? @bucket
 
-        if params.present?
-          resource += "?" + params.map { |k, v| "#{k}=#{v}" }.sort.join("&")
-        end
+      @bucket = client.get_bucket(config.fetch(:bucket))
+      @bucket
+    end
 
-        string_to_sign = ["GET", "", "", expires, resource].join("\n")
-        query["Signature"] = bucket.sign(string_to_sign)
+    def authorization(key, content_type, checksum, date)
+      filename = File.expand_path("/#{bucket.name}/#{path_for(key)}")
+      addition_headers = "x-oss-date:#{date}"
+      sign = ["PUT", checksum, content_type, date, addition_headers, filename].join("\n")
+      signature = bucket.sign(sign)
+      "OSS #{config.fetch(:access_key_id)}:#{signature}"
+    end
 
-        [url, query.to_query].join("?")
-      end
+    def endpoint
+      config.fetch(:endpoint, "https://oss-cn-hangzhou.aliyuncs.com")
+    end
 
-      def bucket
-        return @bucket if defined? @bucket
-        @bucket = client.get_bucket(config.fetch(:bucket))
-        @bucket
-      end
-
-      def authorization(key, content_type, checksum, date)
-        filename = File.expand_path("/#{bucket.name}/#{path_for(key)}")
-        addition_headers = "x-oss-date:#{date}"
-        sign = ["PUT", checksum, content_type, date, addition_headers, filename].join("\n")
-        signature = bucket.sign(sign)
-        "OSS " + config.fetch(:access_key_id) + ":" + signature
-      end
-
-      def endpoint
-        config.fetch(:endpoint, "https://oss-cn-hangzhou.aliyuncs.com")
-      end
-
-      def client
-        @client ||= Aliyun::OSS::Client.new(
-          endpoint: endpoint,
-          access_key_id: config.fetch(:access_key_id),
-          access_key_secret: config.fetch(:access_key_secret),
-          cname: config.fetch(:cname, false)
-        )
-      end
+    def client
+      @client ||= Aliyun::OSS::Client.new(
+        endpoint: endpoint,
+        access_key_id: config.fetch(:access_key_id),
+        access_key_secret: config.fetch(:access_key_secret),
+        cname: config.fetch(:cname, false)
+      )
+    end
   end
 end

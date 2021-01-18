@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-$:.push File.expand_path("lib", __dir__)
+$LOAD_PATH.push File.expand_path("lib", __dir__)
 
 require File.expand_path("lib/active_storage_aliyun/version")
 
@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.email       = "huacnlee@gmail.com"
   s.files       = Dir["{app,config,db,lib}/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
   s.license     = "MIT"
+  s.required_ruby_version = ">= 2.5.0"
 
   s.add_dependency "aliyun-sdk", ">= 0.6.0"
   s.add_dependency "rails", ">= 6.0.0"
