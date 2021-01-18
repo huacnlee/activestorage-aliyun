@@ -1,0 +1,29 @@
+name: build
+on: push
+jobs:
+  build:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - ruby: 2.6
+          gemfile: Gemfile
+    env:
+      BUNDLE_GEMFILE: ${{ matrix.gemfile }}
+      USE_OFFICIAL_GEM_SOURCE: 1
+      RAILS_ENV: test
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - name: "Test"
+      env:
+        ALIYUN_ACCESS_KEY_ID: ${{ secrets.ALIYUN_ACCESS_KEY_ID }}
+        ALIYUN_ACCESS_KEY_SECRET: ${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}
+      run: |
+        bundle exec rails db:migrate
+        bundle exec rake test

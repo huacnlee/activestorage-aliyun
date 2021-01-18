@@ -42,7 +42,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     "#{host}/#{filename_key}"
   end
 
-  def download_url_for(path, filename: nil, content_type: nil, disposition:, params: {})
+  def download_url_for(path, disposition:, filename: nil, content_type: nil, params: {})
     host_url = fixure_url_for(path)
 
     params["response-content-type"] = content_type if content_type
@@ -63,9 +63,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   def mock_service_with_path(path)
-    ActiveStorage::Service.configure(:aliyun,
-      aliyun: { service: "Aliyun", path: path }
-    )
+    ActiveStorage::Service.configure(:aliyun, aliyun: { service: "Aliyun", path: path })
   end
 
   test "path_for" do
@@ -86,64 +84,67 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     url = @service.url(FIXTURE_KEY)
     assert_equal fixure_url_for(FIXTURE_KEY), url
 
-    res = open(url)
-    assert_equal ["200", "OK"], res.status
+    res = URI.open(url)
+    assert_equal %w[200 OK], res.status
 
-    url = @service.url(FIXTURE_KEY, params: {
-      "x-oss-process": "image/resize,h_100,w_100"
-    })
+    url = @service.url(FIXTURE_KEY, params: { "x-oss-process": "image/resize,h_100,w_100" })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
 
-    res = open(url)
-    assert_equal ["200", "OK"], res.status
+    res = URI.open(url)
+    assert_equal %w[200 OK], res.status
   end
 
   test "get private mode url" do
-    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline, filename: "foo.jpg")
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline,
+                                            filename: "foo.jpg")
     assert_equal true, url.include?("Signature=")
     assert_equal true, url.include?("OSSAccessKeyId=")
     assert_equal true, url.include?("response-content-disposition=inline")
     assert_equal true, url.include?("response-content-type=image%2Fpng")
-    res = open(url)
-    assert_equal ["200", "OK"], res.status
+    res = URI.open(url)
+    assert_equal %w[200 OK], res.status
     assert_equal FIXTURE_DATA, res.read
 
-    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline, params: { "x-oss-process" => "image/resize,h_100,w_100" })
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline,
+                                            params: { "x-oss-process" => "image/resize,h_100,w_100" })
     assert_equal true, url.include?("x-oss-process=")
     assert_equal true, url.include?("Signature=")
     assert_equal true, url.include?("OSSAccessKeyId=")
     assert_equal true, url.include?("response-content-type=image%2Fpng")
     assert_equal false, url.include?("response-content-disposition=")
-    res = open(url)
-    assert_equal ["200", "OK"], res.status
+    res = URI.open(url)
+    assert_equal %w[200 OK], res.status
   end
 
   test "get url with oss image thumb" do
     url = @service.url(FIXTURE_KEY, params: { "x-oss-process" => "image/resize,h_100,w_100" })
     assert_equal fixure_url_for(FIXTURE_KEY) + "?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
-    res = open(url)
+    res = URI.open(url)
 
-    assert_equal ["200", "OK"], res.status
+    assert_equal %w[200 OK], res.status
   end
 
   test "get url with string :filename" do
     filename = "Test 中文 [100].zip"
     url = @private_service.url(FIXTURE_KEY, content_type: "image/jpeg", disposition: :attachment, filename: filename)
-    res = open(url)
+    res = URI.open(url)
 
-    assert_equal ["200", "OK"], res.status
+    assert_equal %w[200 OK], res.status
     assert_equal "image/jpeg", res.content_type
-    assert_equal "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip", res.meta["content-disposition"]
+    expected_disposition = "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip"
+    assert_equal expected_disposition, res.meta["content-disposition"]
   end
 
   test "get url with attachment type disposition" do
     filename = ActiveStorage::Filename.new("Test 中文 [100].zip")
-    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment, filename: filename)
-    res = open(url)
+    url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/jpeg", disposition: :attachment,
+                                            filename: filename)
+    res = URI.open(url)
 
-    assert_equal ["200", "OK"], res.status
+    assert_equal %w[200 OK], res.status
     assert_equal "image/jpeg", res.content_type
-    assert_equal "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip", res.meta["content-disposition"]
+    expected_disposition = "attachment; filename=\"Test %3F%3F %5B100%5D.zip\"; filename*=UTF-8''Test%20%E4%B8%AD%E6%96%87%20%5B100%5D.zip"
+    assert_equal expected_disposition, res.meta["content-disposition"]
   end
 
   test "get url with empty content-type" do
@@ -153,15 +154,13 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
   end
 
   test "uploading with integrity" do
-    begin
-      key  = SecureRandom.base58(24)
-      data = "Something else entirely!"
-      @service.upload(key, StringIO.new(data), checksum: Digest::MD5.base64digest(data))
+    key  = SecureRandom.base58(24)
+    data = "Something else entirely!"
+    @service.upload(key, StringIO.new(data), checksum: Digest::MD5.base64digest(data))
 
-      assert_equal data, @service.download(key)
-    ensure
-      @service.delete key
-    end
+    assert_equal data, @service.download(key)
+  ensure
+    @service.delete key
   end
 
   test "downloading" do
@@ -176,7 +175,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       chunks << chunk
     end
 
-    assert_equal [ FIXTURE_DATA ], chunks
+    assert_equal [FIXTURE_DATA], chunks
   end
 
   test "downloading chunk" do
@@ -236,23 +235,26 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
     date         = "Fri, 02 Feb 2018 06:45:25 GMT"
 
     travel_to Time.parse(date) do
-      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type, content_length: data.size, checksum: checksum)
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type,
+                                                        content_length: data.size, checksum: checksum)
       assert_equal date, headers["x-oss-date"]
       assert_equal "text/plain", headers["Content-Type"]
       assert_equal checksum, headers["Content-MD5"]
-      assert headers["Authorization"].start_with?("OSS #{ENV["ALIYUN_ACCESS_KEY_ID"]}:")
+      assert headers["Authorization"].start_with?("OSS #{ENV['ALIYUN_ACCESS_KEY_ID']}:")
     end
   end
 
   test "direct upload" do
-    begin
-      key      = SecureRandom.base58(24)
-      data     = "Something else entirely!"
-      checksum = Digest::MD5.base64digest(data)
-      url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
-      assert_equal fixure_url_for(key), url
+    key      = SecureRandom.base58(24)
+    data     = "Something else entirely!"
+    checksum = Digest::MD5.base64digest(data)
+    url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain",
+                                                   content_length: data.size, checksum: checksum)
+    assert_equal fixure_url_for(key), url
 
-      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain", content_length: data.size, checksum: checksum)
+    begin
+      headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain",
+                                                        content_length: data.size, checksum: checksum)
 
       uri = URI.parse url
       request = Net::HTTP::Put.new uri.request_uri
@@ -260,6 +262,7 @@ class ActiveStorageAliyun::Test < ActiveSupport::TestCase
       headers.each_key do |field|
         request.add_field field, headers[field]
       end
+
       Net::HTTP.start(uri.host, uri.port, use_ssl: true) do |http|
         http.request request
       end

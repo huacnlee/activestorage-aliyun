@@ -17,6 +17,6 @@ Gem::Specification.new do |s|
   s.files       = Dir["{app,config,db,lib}/**/*", "LICENSE", "README.md", "CHANGELOG.md"]
   s.license     = "MIT"
 
-  s.add_dependency "rails", ">= 6.0.0"
   s.add_dependency "aliyun-sdk", ">= 0.6.0"
+  s.add_dependency "rails", ">= 6.0.0"
 end
