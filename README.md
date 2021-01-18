@@ -2,9 +2,7 @@
 
 Wraps the Aliyun OSS as an Active Storage service, use [Aliyun official Ruby SDK](https://github.com/aliyun/aliyun-oss-ruby-sdk) for upload.
 
-
-[![Gem Version](https://badge.fury.io/rb/activestorage-aliyun.svg)](https://badge.fury.io/rb/activestorage-aliyun) [![Build Status](https://travis-ci.org/huacnlee/activestorage-aliyun.svg)](https://travis-ci.org/huacnlee/activestorage-aliyun) [![Code Climate](https://codeclimate.com/github/huacnlee/activestorage-aliyun/badges/gpa.svg)](https://codeclimate.com/github/huacnlee/activestorage-aliyun) [![codecov.io](https://codecov.io/github/huacnlee/activestorage-aliyun/coverage.svg?branch=master)](https://codecov.io/github/huacnlee/activestorage-aliyun?branch=master)
-
+[![Gem Version](https://badge.fury.io/rb/activestorage-aliyun.svg)](https://badge.fury.io/rb/activestorage-aliyun) [![build](https://github.com/huacnlee/activestorage-aliyun/workflows/build/badge.svg)](https://github.com/huacnlee/activestorage-aliyun/actions?query=workflow%3Abuild)
 
 ## Installation
 
