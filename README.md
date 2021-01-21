@@ -73,7 +73,7 @@ end
 And then:
 
 ```erb
-<%= image_tag @photo.image.image_thumb_url("image/resize,h_100,w_100") %>
+<%= image_tag @photo.image_thumb_url("image/resize,h_100,w_100") %>
 ```
 
 ### Use for file download
