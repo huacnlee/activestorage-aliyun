@@ -7,14 +7,14 @@
 
 <p>
   <strong>Avatar:</strong>
-  <%= image_tag @user.avatar.service_url(params: { "x-oss-process" => "image/resize,h_100,w_100" }), style: "width: 50px" %>
+  <%= image_tag @user.avatar.url(params: { "x-oss-process" => "image/resize,h_100,w_100" }), style: "width: 50px" %>
 </p>
 
 <p>
   <strong>Files:</strong>
   <ul>
     <% @user.files.each do |f| %>
-    <li><%= link_to f.filename, f.service_url(disposition: :attachment) %></li>
+    <li><%= link_to f.filename, f.url(disposition: :attachment) %></li>
     <% end %>
   </ul>
 </p>

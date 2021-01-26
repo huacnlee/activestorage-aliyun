@@ -1,17 +1,12 @@
-test:
+aliyun:
   service: Aliyun
   access_key_id: <%= ENV["ALIYUN_ACCESS_KEY_ID"] %>
   access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
   bucket: carrierwave-aliyun-test
   endpoint: https://oss-cn-beijing.aliyuncs.com
-  mode: public
+  public: true
   path: /aaa/bbb
 
 local:
-  service: Aliyun
-  access_key_id: <%= ENV["ALIYUN_ACCESS_KEY_ID"] %>
-  access_key_secret: <%= ENV["ALIYUN_ACCESS_KEY_SECRET"] %>
-  bucket: carrierwave-aliyun-test
-  endpoint: https://oss-cn-beijing.aliyuncs.com
-  mode: public
-  path: /aaaa/bbb
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
