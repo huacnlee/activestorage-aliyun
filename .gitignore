@@ -7,3 +7,4 @@ test/dummy/yarn-error.log
 test/dummy/storage/
 test/dummy/db/*.sqlite3
 test/dummy/tmp/
+.DS_Store
