@@ -85,7 +85,7 @@ module ActiveStorage
     # Source: *.your.host.com
     # Allowed Methods: POST, PUT, HEAD
     # Allowed Headers: *
-    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:)
+    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, **)
       instrument :url, key: key do |payload|
         generated_url = bucket.object_url(path_for(key), false)
         payload[:url] = generated_url
