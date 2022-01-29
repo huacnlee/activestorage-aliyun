@@ -19,10 +19,10 @@ module ActiveStorage
 
     CHUNK_SIZE = 1024 * 1024
 
-    def upload(key, io, checksum: nil, content_type: nil, disposition: nil, filename: nil)
+    def upload(key, io, checksum: nil, content_type: nil, disposition: nil, filename: nil, custom_metadata: {}, **)
       instrument :upload, key: key, checksum: checksum do
         content_type ||= Marcel::MimeType.for(io)
-        bucket.put_object(path_for(key), content_type: content_type) do |stream|
+        bucket.put_object(path_for(key), content_type: content_type, metas: custom_metadata) do |stream|
           stream << io.read(CHUNK_SIZE) until io.eof?
         end
       end
@@ -85,7 +85,7 @@ module ActiveStorage
     # Source: *.your.host.com
     # Allowed Methods: POST, PUT, HEAD
     # Allowed Headers: *
-    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:)
+    def url_for_direct_upload(key, expires_in:, content_type:, content_length:, checksum:, custom_metadata: {})
       instrument :url, key: key do |payload|
         generated_url = bucket.object_url(path_for(key), false)
         payload[:url] = generated_url
@@ -96,14 +96,19 @@ module ActiveStorage
     # Headers for Direct Upload
     # https://help.aliyun.com/document_detail/31951.html
     # headers["Date"] is required use x-oss-date instead
-    def headers_for_direct_upload(key, content_type:, checksum:, **)
+    def headers_for_direct_upload(key, content_type:, checksum:, custom_metadata: {}, **)
       date = Time.now.httpdate
       {
         "Content-Type" => content_type,
         "Content-MD5" => checksum,
         "Authorization" => authorization(key, content_type, checksum, date),
-        "x-oss-date" => date
+        "x-oss-date" => date,
+        **custom_metadata_headers(custom_metadata)
       }
+    end
+
+    def custom_metadata_headers(metadata)
+      metadata.transform_keys { |key| "x-oss-meta-#{key}" }
     end
 
     # Remove this in Rails 6.1, compatiable with Rails 6.0.0
