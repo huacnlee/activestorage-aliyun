@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Add custo_metadata args in service method for Rails 7 supports.
+
 ## 1.0.0
 
 - Update for support Rals 6.1 permanent URL, and compatiable with Rails 6.0.
