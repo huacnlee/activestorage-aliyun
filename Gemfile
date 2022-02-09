@@ -7,8 +7,7 @@ git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 # Bundler will treat runtime dependencies like base dependencies, and
 # development dependencies will be added by default to the :development group.
 gemspec
-gem "rails-ujs"
-gem "sqlite3"
+eval File.read(File.expand_path("Gemfile-dev", __dir__)), nil, "Gemfile-dev"
 
 # Declare any dependencies that are still in development here instead of in
 # your gemspec. These might include edge Rails or gems from your path or

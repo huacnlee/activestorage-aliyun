@@ -5,7 +5,7 @@ require "test_helper"
 module ActiveStorageAliyun
   class Test < ActiveSupport::TestCase
     FIXTURE_KEY = SecureRandom.base58(24)
-    FIXTURE_DATA  = "\211PNG\r\n\032\n\000\000\000\rIHDR\000\000\000\020\000\000\000\020\001\003\000\000\000%=m\"\000\000\000\006PLTE\000\000\000\377\377\377\245\331\237\335\000\000\0003IDATx\234c\370\377\237\341\377_\206\377\237\031\016\2603\334?\314p\1772\303\315\315\f7\215\031\356\024\203\320\275\317\f\367\201R\314\f\017\300\350\377\177\000Q\206\027(\316]\233P\000\000\000\000IEND\256B`\202".dup.force_encoding(Encoding::BINARY)
+    FIXTURE_DATA = "\211PNG\r\n\032\n\000\000\000\rIHDR\000\000\000\020\000\000\000\020\001\003\000\000\000%=m\"\000\000\000\006PLTE\000\000\000\377\377\377\245\331\237\335\000\000\0003IDATx\234c\370\377\237\341\377_\206\377\237\031\016\2603\334?\314p\1772\303\315\315\f7\215\031\356\024\203\320\275\317\f\367\201R\314\f\017\300\350\377\177\000Q\206\027(\316]\233P\000\000\000\000IEND\256B`\202".dup.force_encoding(Encoding::BINARY)
     ALIYUN_CONFIG = {
       aliyun: {
         service: "Aliyun",
@@ -61,7 +61,7 @@ module ActiveStorageAliyun
     end
 
     def mock_service_with_path(path)
-      ActiveStorage::Service.configure(:aliyun, aliyun: { service: "Aliyun", path: path })
+      ActiveStorage::Service.configure(:aliyun, aliyun: {service: "Aliyun", path: path})
     end
 
     test "path_for" do
@@ -86,7 +86,7 @@ module ActiveStorageAliyun
       assert_equal "200", res.code
       assert_equal FIXTURE_DATA, res.body
 
-      url = @service.url(FIXTURE_KEY, params: { "x-oss-process": "image/resize,h_100,w_100" })
+      url = @service.url(FIXTURE_KEY, params: {"x-oss-process": "image/resize,h_100,w_100"})
       assert_equal "#{fixure_url_for(FIXTURE_KEY)}?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
 
       res = download_file(url)
@@ -107,7 +107,7 @@ module ActiveStorageAliyun
       assert_equal FIXTURE_DATA, res.body
 
       url = @private_service.url(FIXTURE_KEY, expires_in: 500, content_type: "image/png", disposition: :inline,
-                                              params: { "x-oss-process" => "image/resize,h_100,w_100" })
+                                              params: {"x-oss-process" => "image/resize,h_100,w_100"})
       assert_equal true, url.include?("x-oss-process=")
       assert_equal true, url.include?("Signature=")
       assert_equal true, url.include?("OSSAccessKeyId=")
@@ -118,7 +118,7 @@ module ActiveStorageAliyun
     end
 
     test "get url with oss image thumb" do
-      url = @service.url(FIXTURE_KEY, params: { "x-oss-process" => "image/resize,h_100,w_100" })
+      url = @service.url(FIXTURE_KEY, params: {"x-oss-process" => "image/resize,h_100,w_100"})
       assert_equal "#{fixure_url_for(FIXTURE_KEY)}?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
       res = download_file(url)
       assert_equal "200", res.code
@@ -152,7 +152,7 @@ module ActiveStorageAliyun
     end
 
     test "uploading with integrity" do
-      key  = SecureRandom.base58(24)
+      key = SecureRandom.base58(24)
       data = "Something else entirely!"
       @service.upload(key, StringIO.new(data), checksum: Digest::MD5.base64digest(data))
 
@@ -226,11 +226,11 @@ module ActiveStorageAliyun
     end
 
     test "headers_for_direct_upload" do
-      key          = "test-file"
-      data         = "Something else entirely!"
-      checksum     = Digest::MD5.base64digest(data)
+      key = "test-file"
+      data = "Something else entirely!"
+      checksum = Digest::MD5.base64digest(data)
       content_type = "text/plain"
-      date         = "Fri, 02 Feb 2018 06:45:25 GMT"
+      date = "Fri, 02 Feb 2018 06:45:25 GMT"
 
       travel_to Time.parse(date) do
         headers = @service.headers_for_direct_upload(key, expires_in: 5.minutes, content_type: content_type,
@@ -238,15 +238,15 @@ module ActiveStorageAliyun
         assert_equal date, headers["x-oss-date"]
         assert_equal "text/plain", headers["Content-Type"]
         assert_equal checksum, headers["Content-MD5"]
-        assert headers["Authorization"].start_with?("OSS #{ENV['ALIYUN_ACCESS_KEY_ID']}:")
+        assert headers["Authorization"].start_with?("OSS #{ENV["ALIYUN_ACCESS_KEY_ID"]}:")
       end
     end
 
     test "direct upload" do
-      key      = SecureRandom.base58(24)
-      data     = "Something else entirely!"
+      key = SecureRandom.base58(24)
+      data = "Something else entirely!"
       checksum = Digest::MD5.base64digest(data)
-      url      = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain",
+      url = @service.url_for_direct_upload(key, expires_in: 5.minutes, content_type: "text/plain",
                                                      content_length: data.size, checksum: checksum)
       assert_equal fixure_url_for(key), url
 

@@ -29,7 +29,7 @@ module ActiveStorage
     end
 
     def download(key, &block)
-      if block_given?
+      if block
         instrument :streaming_download, key: key do
           bucket.get_object(path_for(key), &block)
         end
@@ -156,12 +156,12 @@ module ActiveStorage
     def path_for(key)
       root_path = config.fetch(:path, nil)
       full_path = if root_path.blank? || root_path == "/"
-                    key
-                  else
-                    File.join(root_path, key)
-                  end
+        key
+      else
+        File.join(root_path, key)
+      end
 
-      full_path.gsub(%r{^/}, "").gsub(%r{/+}, "/")
+      full_path.gsub(%r{^/}, "").squeeze("/")
     end
 
     def object_url(key, sign: false, expires_in: 60, params: {})
@@ -173,8 +173,8 @@ module ActiveStorage
       end
 
       resource = "/#{bucket.name}/#{key}"
-      expires  = Time.now.to_i + expires_in
-      query    = {
+      expires = Time.now.to_i + expires_in
+      query = {
         "Expires" => expires,
         "OSSAccessKeyId" => config.fetch(:access_key_id)
       }

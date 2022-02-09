@@ -11,5 +11,5 @@
 // about supported directives.
 //
 //= require activestorage
-//= require rails-ujs
+//= require jquery_ujs
 //= require_tree .

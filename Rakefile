@@ -10,12 +10,14 @@ require "rdoc/task"
 
 RDoc::Task.new(:rdoc) do |rdoc|
   rdoc.rdoc_dir = "rdoc"
-  rdoc.title    = "ActiveStorage Aliyun Service"
+  rdoc.title = "ActiveStorage Aliyun Service"
   rdoc.options << "--line-numbers"
   rdoc.rdoc_files.include("README.md")
   rdoc.rdoc_files.include("lib/**/*.rb")
 end
 
+APP_RAKEFILE = File.expand_path("test/dummy/Rakefile", __dir__)
+load "rails/tasks/engine.rake"
 require "bundler/gem_tasks"
 
 require "rake/testtask"
