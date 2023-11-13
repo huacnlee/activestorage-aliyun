@@ -1,3 +1,5 @@
+https://github.com/huacnlee/activestorage-aliyun/releases
+
 ## 1.1.0
 
 - Add custo_metadata args in service method for Rails 7 supports.

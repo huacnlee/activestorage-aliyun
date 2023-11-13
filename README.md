@@ -28,12 +28,12 @@ config/storage.yml
 ```yml
 aliyun:
   service: Aliyun
-  access_key_id: "your-oss-access-key-id"
-  access_key_secret: "your-oss-access-key-secret"
-  bucket: "bucket-name"
-  endpoint: "https://oss-cn-beijing.aliyuncs.com"
+  access_key_id: 'your-oss-access-key-id'
+  access_key_secret: 'your-oss-access-key-secret'
+  bucket: 'bucket-name'
+  endpoint: 'https://oss-cn-beijing.aliyuncs.com'
   # path prefix, default: /
-  path: "my-app-files"
+  path: 'my-app-files'
   # Bucket public: true/false, default: true, for generate public/private URL.
   public: true
 ```
@@ -43,13 +43,13 @@ aliyun:
 ```yml
 aliyun:
   service: Aliyun
-  access_key_id: "your-oss-access-key-id"
-  access_key_secret: "your-oss-access-key-secret"
-  bucket: "bucket-name"
-  endpoint: "https://file.myhost.com"
+  access_key_id: 'your-oss-access-key-id'
+  access_key_secret: 'your-oss-access-key-secret'
+  bucket: 'bucket-name'
+  endpoint: 'https://oss-cn-beijing.aliyuncs.com'
   public: false
-  # Enable cname to use custom domain
-  cname: true
+  # Custom host for get file url, if this present, upload still use `endpoint`, but download url will use this.
+  host: 'https://file.myhost.com'
 ```
 
 ### Use for image url
