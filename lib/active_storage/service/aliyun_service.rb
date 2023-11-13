@@ -165,14 +165,14 @@ module ActiveStorage
     end
 
     def object_url(key, sign: false, expires_in: 60, params: {})
-      url = bucket.object_url(key, false)
+      url = host_bucket.object_url(key, false)
       unless sign
         return url if params.blank?
 
         return "#{url}?#{params.to_query}"
       end
 
-      resource = "/#{bucket.name}/#{key}"
+      resource = "/#{host_bucket.name}/#{key}"
       expires = Time.now.to_i + expires_in
       query = {
         "Expires" => expires,
@@ -183,7 +183,7 @@ module ActiveStorage
       resource += "?" + params.map { |k, v| "#{k}=#{v}" }.sort.join("&") if params.present?
 
       string_to_sign = ["GET", "", "", expires, resource].join("\n")
-      query["Signature"] = bucket.sign(string_to_sign)
+      query["Signature"] = host_bucket.sign(string_to_sign)
 
       [url, query.to_query].join("?")
     end
@@ -193,6 +193,14 @@ module ActiveStorage
 
       @bucket = client.get_bucket(config.fetch(:bucket))
       @bucket
+    end
+
+    def host_bucket
+      return @host_bucket if defined? @host_bucket
+
+      host_bucket_client = host ? host_client : client
+      @host_bucket = host_bucket_client.get_bucket(config.fetch(:bucket))
+      @host_bucket
     end
 
     def authorization(key, content_type, checksum, date)
@@ -207,9 +215,22 @@ module ActiveStorage
       config.fetch(:endpoint, "https://oss-cn-hangzhou.aliyuncs.com")
     end
 
+    def host
+      config.fetch(:host, nil)
+    end
+
     def client
       @client ||= Aliyun::OSS::Client.new(
         endpoint: endpoint,
+        access_key_id: config.fetch(:access_key_id),
+        access_key_secret: config.fetch(:access_key_secret),
+        cname: config.fetch(:cname, false)
+      )
+    end
+
+    def host_client
+      @host_client ||= Aliyun::OSS::Client.new(
+        endpoint: host,
         access_key_id: config.fetch(:access_key_id),
         access_key_secret: config.fetch(:access_key_secret),
         cname: config.fetch(:cname, false)
