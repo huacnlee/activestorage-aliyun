@@ -117,6 +117,13 @@ module ActiveStorageAliyun
       assert_equal "200", res.code
     end
 
+    test "host" do
+      config = ALIYUN_CONFIG.deep_dup
+      config[:aliyun][:host] = "https://foo.bar"
+      host_service = ActiveStorage::Service.configure(:aliyun, config)
+      assert_equal "https://carrierwave-aliyun-test.foo.bar/activestorage-aliyun-test/#{FIXTURE_KEY}", host_service.url(FIXTURE_KEY)
+    end
+
     test "get url with oss image thumb" do
       url = @service.url(FIXTURE_KEY, params: {"x-oss-process" => "image/resize,h_100,w_100"})
       assert_equal "#{fixure_url_for(FIXTURE_KEY)}?x-oss-process=image%2Fresize%2Ch_100%2Cw_100", url
